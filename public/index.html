@@ -356,7 +356,7 @@ $('#go').onclick=async function(){
     L(x.name+(x.status==='completed'?(x.conclusion==='success'?' ✓':' ✗'):'…'))});
    M(Math.min(95,12+done/Math.max(1,st.length)*83));
    if(s.state==='done')break;
-   if(s.state==='failed'){const f=st.find(x=>x.conclusion==='failure');throw new Error('Build gagal'+(f?' di langkah: '+f.name:''))}
+   if(s.state==='failed'){if(s.tail)L('Detail error:\n'+s.tail);const f=st.find(x=>x.conclusion==='failure');throw new Error('Build gagal'+(f?' di langkah: '+f.name:''))}
   }
   M(100);L('Selesai! Unduh file ZIP berisi APK (berlaku 7 hari).');
   const d=$('#dlb');d.href='/api/download?job='+job;d.classList.remove('hide');
