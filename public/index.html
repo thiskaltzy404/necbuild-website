@@ -314,8 +314,11 @@ pr();
 function hist(){let h=[];try{h=JSON.parse(store.get('nb-h')||'[]')}catch(e){}return h}
 function rh(){const h=hist();$('#hist').innerHTML=h.length?h.map(x=>`<div class="perm"><div><b style="font-weight:500">${x.n}</b><small>${x.p} · v${x.v} · ${x.t}</small></div><a href="/api/download?job=${x.j||''}" class="ic" style="width:36px;height:36px" aria-label="Unduh"><svg class="i"><use href="#dl"/></svg></a></div>`).join(''):'<p class="sub">Belum ada build.</p>'}rh();
 const fext=f=>(f.name.split('.').pop()||'').toLowerCase();
+const snap=f=>f?f.arrayBuffer().then(b=>new File([b],f.name,{type:f.type})).catch(()=>f):null;
 async function up(job,kind,f){
- const r=await fetch(`/api/upload?job=${job}&kind=${kind}&ext=${fext(f)}`,{method:'POST',headers:{'Content-Type':'application/octet-stream'},body:f});
+ let buf;try{buf=await f.arrayBuffer()}catch(e){throw new Error('File '+kind+' tidak bisa dibaca. Pilih ulang file dari penyimpanan HP.')}
+ let r;try{r=await fetch(`/api/upload?job=${job}&kind=${kind}&ext=${fext(f)}`,{method:'POST',headers:{'Content-Type':'application/octet-stream'},body:buf})}
+ catch(e){throw new Error('Gagal mengirim '+kind+' ke server ('+e.message+'). Cek koneksi lalu coba lagi.')}
  const j=await r.json().catch(()=>({}));
  if(!r.ok)throw new Error(j.error||('Upload gagal ('+r.status+')'));
  return j.file}
@@ -330,7 +333,7 @@ $('#go').onclick=async function(){
  try{
   const files={};
   for(const [k,f] of [['icon',FILES.icon],['media',FILES.media],['html',isUrl?null:FILES.html]]){
-   if(!f)continue;L(`Mengunggah ${k} (${fsz(f.size)})…`);files[k]=await up(job,k,f)}
+   if(!f)continue;const ff=await f;L(`Mengunggah ${k} (${fsz(ff.size)})…`);files[k]=await up(job,k,ff)}
   M(8);
   const cfg={source:isUrl?'url':'html',url:$('#url').value.trim(),name:$('#nm').value.trim(),package:$('#pk').value.trim(),
    versionCode:+$('#vc').value,versionName:$('#vn').value.trim(),permissions:perms(),
@@ -382,9 +385,9 @@ function dz(el,cb){
  el.addEventListener('drop',e=>{const f=e.dataTransfer.files[0];if(f&&(el.dataset.acc.split(',').some(t=>t.trim().endsWith('/*')?f.type.startsWith(t.trim().slice(0,-1)):t.trim().startsWith('.')?f.name.toLowerCase().endsWith(t.trim()):f.type===t.trim())))set(f);else toast('Format file tidak didukung')});
 }
 const FILES={};
-dz($('#dz-m'),(f,u)=>{FILES.media=f;media=f?{url:u,type:f.type.startsWith('video')?'v':'i'}:null;$('#mopt').classList.toggle('hide',!f);pv()});
-dz($('#dz-i'),(f,u)=>{FILES.icon=f;iconURL=u;pv()});
-dz($('#dz-h'),f=>{FILES.html=f});
+dz($('#dz-m'),(f,u)=>{FILES.media=snap(f);media=f?{url:u,type:f.type.startsWith('video')?'v':'i'}:null;$('#mopt').classList.toggle('hide',!f);pv()});
+dz($('#dz-i'),(f,u)=>{FILES.icon=snap(f);iconURL=u;pv()});
+dz($('#dz-h'),f=>{FILES.html=snap(f)});
 seg('#mfit',c=>{fit=c.dataset.v;pv()});
 $('#mTx').onclick=function(){this.classList.toggle('on');pv()};
 // donation modal
