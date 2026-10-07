@@ -1,6 +1,8 @@
 <!DOCTYPE html>
 <html lang="id"><head><meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Orbitron&family=Audiowide&family=Michroma&family=Oxanium&family=Zen+Dots&display=swap">
 <title>NecBuild — Web2APK Compiler</title>
 <style>
 :root{--bg1:#e4e7ec;--bg2:#fbf0b8;--card:rgba(255,255,255,.72);--ink:#16161a;--mut:#6b6f78;--acc:#ffd24d;--accink:#16161a;--dark:#2b2b2e;--line:rgba(0,0,0,.1);--shadow:0 20px 50px -20px rgba(80,70,20,.25);box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}
@@ -92,6 +94,13 @@ footer{text-align:center;color:var(--mut);font-size:13px;padding:30px 0}
 em.bd,.pi em{font-style:normal;font-size:10px;background:#ff6b5a;color:#fff;padding:1px 8px;border-radius:99px;margin-left:8px;vertical-align:1px}
 .page{will-change:transform,opacity}.page.enter{animation:pgin .65s cubic-bezier(.2,.8,.2,1)}.page.leave{opacity:0;transform:translateY(-14px) scale(.99);filter:blur(4px);transition:all .28s ease}
 @keyframes pgin{from{opacity:0;transform:translateY(26px) scale(.985);filter:blur(6px)}to{opacity:1;transform:none;filter:blur(0)}}
+
+.pov{position:absolute;left:0;right:0;bottom:0;padding:0 12px 16px;display:flex;flex-direction:column;align-items:center;gap:8px;z-index:1;text-align:center}
+.ptx{font-size:9px;line-height:1.5;letter-spacing:.04em}
+.pbar{width:70%;height:2px;background:#ffffff33;border-radius:9px;overflow:hidden}.pbar i{display:block;height:100%;width:0;animation:bar 6s linear infinite}
+.pft{font-size:5.5px;letter-spacing:.3em;line-height:1.9;opacity:.85}
+.pal{display:flex;gap:10px;flex-wrap:wrap;margin-top:4px}.sx{width:34px;height:34px;border-radius:50%;border:2px solid var(--line);cursor:pointer;transition:transform .25s,box-shadow .25s;padding:0}
+.sx:hover{transform:scale(1.12)}.sx.on{box-shadow:0 0 0 3px var(--bg1),0 0 0 5px var(--ink);transform:scale(1.1)}
 </style></head><body>
 <svg width="0" height="0" style="position:absolute"><defs>
 <symbol id="logo" viewBox="0 0 24 24"><path d="M12 2 3 7v10l9 5 9-5V7z"/><path d="m9 10-2 2 2 2m6-4 2 2-2 2"/></symbol>
@@ -167,7 +176,18 @@ em.bd,.pi em{font-style:normal;font-size:10px;background:#ff6b5a;color:#fff;padd
 <label>Latar splash: foto / video (opsional)</label>
 <div class="dz" id="dz-m" data-acc="image/*,video/mp4,video/webm" data-ic="film" data-t="Tambah foto atau video" data-s="JPG, PNG, GIF, WebP, MP4, WebM · maks 4 MB" data-max="4"></div>
 <div id="mopt" class="hide"><label>Mode tampil</label><div class="seg" id="mfit"><button class="chip on" data-v="cover">Penuh layar</button><button class="chip" data-v="contain">Muat di layar</button></div>
-<div class="perm"><div>Tampilkan logo & teks<small>Di atas foto / video</small></div><div class="sw on" id="mTx"></div></div></div>
+</div>
+<div class="perm"><div>Suara video<small>Putar suara asli dari video</small></div><div class="sw on" id="sndOn"></div></div>
+<label>Teks utama (opsional)</label><input type="text" id="sTg" placeholder="Contoh: Jadilah awan hitam yang menutupi para bintang" maxlength="120">
+<div class="row"><div><label>Teks bawah 1 (opsional)</label><input type="text" id="f1" placeholder="Powered By @namamu" maxlength="80"></div><div><label>Teks bawah 2 (opsional)</label><input type="text" id="f2" placeholder="NAMA APP V1" maxlength="80"></div></div>
+<label>Font</label><div class="seg" id="fnt"></div>
+<div class="perm"><div>Bar progres<small>Garis tipis yang terisi sesuai durasi</small></div><div class="sw on" id="barOn"></div></div>
+<div class="perm"><div>Tombol skip<small>Pengguna bisa melewati splash</small></div><div class="sw on" id="skOn"></div></div>
+<div id="skOpt"><label>Gaya tombol skip</label><div class="seg" id="skst"></div></div>
+<label>Warna teks utama</label><div class="pal" id="pTx"></div>
+<label>Warna teks bawah</label><div class="pal" id="pFt"></div>
+<label>Warna tombol skip</label><div class="pal" id="pSk"></div>
+<label>Warna bar progres</label><div class="pal" id="pBr"></div>
 <div class="hide" aria-hidden="true">
 <label>Jenis animasi</label><div class="seg" id="anim"></div>
 <div class="row"><div><label>Teks splash</label><input type="text" id="st" value="Aplikasiku"></div><div><label>Durasi: <span id="dv">2000</span> ms</label><input type="range" id="dur" min="500" max="5000" step="100" value="2000" style="width:100%;accent-color:#ffd24d"></div>
@@ -270,26 +290,42 @@ const A=[['default','Default'],['fade','Fade in'],['zoom','Zoom in'],['slide','S
 let cur='fade';
 $('#anim').innerHTML=A.map(a=>`<button class="chip${a[0]===cur?' on':''}" data-v="${a[0]}">${a[1]}</button>`).join('');
 seg('#anim',c=>{cur=c.dataset.v;pv()});
+let fnt='orbitron',skst=1;
+const PC={tx:'#ffffff',ft:'#9ca3af',sk:'#a855f7',br:'#a855f7'};
+const FN={orbitron:'Orbitron',audiowide:'Audiowide',michroma:'Michroma',oxanium:'Oxanium',zendots:'Zen Dots'};
+const COL=[['#ffffff','Putih'],['#ffd24d','Kuning'],['#a855f7','Ungu'],['#3b82f6','Biru'],['#22d3ee','Cyan'],['#22c55e','Hijau'],['#ef4444','Merah'],['#f97316','Oranye'],['#ec4899','Pink'],['#9ca3af','Abu-abu']];
+const esc=x=>String(x).replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
+const SKI='<svg viewBox="0 0 24 24" width="9" height="9" fill="currentColor"><path d="M5 4l10 8-10 8zM17 4h3v16h-3z"/></svg>';
+const on_=k=>$(k).classList.contains('on');
+function skipHTML(st,c,ff){
+ const S={1:`padding:4px 14px;border:1px solid ${c};border-radius:99px;background:${c}33;color:${c}`,2:`padding:4px 14px;border-radius:99px;background:${c};color:#0b0d10`,3:`padding:3px 6px;color:${c}`,4:`width:22px;height:22px;border:1px solid ${c};border-radius:50%;background:${c}33;color:${c}`,5:`padding:4px 14px;border:1px solid ${c};border-radius:3px;color:${c}`}[st];
+ return `<div style="${ff}display:flex;align-items:center;justify-content:center;gap:5px;font-size:7px;letter-spacing:.2em;${S}">${SKI}${st===4?'':'SKIP'}</div>`}
 function pv(){
- const sp=$('#sp'),bg=$('#bg').value,fg=$('#fg').value,t=$('#st').value||'App';
- const on=$('#spOn').classList.contains('on');
- sp.style.display=on?'flex':'none';sp.style.color=fg;
- sp.style.background=cur==='gradient'?`linear-gradient(160deg,${bg},${fg}55)`:bg;
- const lg=iconURL?`<div class="lg" style="background:none"><img src="${iconURL}" style="width:100%;height:100%;border-radius:16px;object-fit:cover"></div>`:'<div class="lg"><svg class="i"><use href="#logo"/></svg></div>';
- const map={fade:'an-fade',zoom:'an-zoom',slide:'an-slide',bounce:'an-bounce',pulse:'an-pulse',sway:'an-sway',spin:'an-spin'};
- let h=cur==='logo'?lg:cur==='minimal'?`<small style="font-size:11px;font-weight:400">${t}</small>`:lg+`<span id="tx">${t}</span>`;
- if(cur==='progress'||cur==='bar')h+='<div class="prog"><i></i></div>';
- if(cur==='dots')h+='<div class="dots"><i></i><i></i><i></i></div>';
+ const sp=$('#sp'),bg=$('#bg').value;
+ sp.style.display=on_('#spOn')?'flex':'none';sp.style.background=bg;sp.style.color='#fff';
  const mk=media?(media.type==='v'?`<video class="mda" src="${media.url}" autoplay muted loop playsinline style="object-fit:${fit}"></video>`:`<img class="mda" src="${media.url}" style="object-fit:${fit}">`)+'<div class="shd"></div>':'';
- const tx=!media||$('#mTx').classList.contains('on');
- sp.innerHTML=mk+(tx?`<div class="${map[cur]||''}" style="position:relative;z-index:1;display:flex;flex-direction:column;align-items:center;gap:10px">${h}</div>`:'');
- if(cur==='type'){const e=$('#tx');let i=0;clearInterval(pv.t);pv.t=setInterval(()=>{e.textContent=t.slice(0,i=(i+1)%(t.length+2))||'|'},180)}
- const hd=$('#hd');hd.style.display=$('#hdOn').classList.contains('on')?'flex':'none';hd.style.background='#12151a';hd.style.color='#f5f5f1';
+ const ff=`font-family:'${FN[fnt]}',sans-serif;`,g=k=>$(k).value.trim(),tg=g('#sTg'),f1=g('#f1'),f2=g('#f2');
+ let h='';
+ if(tg)h+=`<div class="ptx" style="${ff}color:${PC.tx};text-shadow:0 0 9px ${PC.tx}">${esc(tg)}</div>`;
+ if(on_('#barOn'))h+=`<div class="pbar"><i style="background:${PC.br};box-shadow:0 0 6px ${PC.br}"></i></div>`;
+ if(on_('#skOn'))h+=skipHTML(skst,PC.sk,ff);
+ if(f1||f2)h+=`<div class="pft" style="${ff}color:${PC.ft}">${esc(f1)}${f1&&f2?'<br>':''}${esc(f2)}</div>`;
+ sp.innerHTML=mk+(h?`<div class="pov">${h}</div>`:'');
+ const hd=$('#hd');hd.style.display=(on_('#hdOn')&&!on_('#spOn'))?'flex':'none';hd.style.background='#12151a';hd.style.color='#f5f5f1';
  $('#ph').style.background=bg;
 }
 ['#st','#bg','#fg','#spOn','#hdOn'].forEach(s=>$(s).addEventListener(s.includes('#s')&&s!=='#st'?'click':'input',pv));
 $('#spOn').onclick=function(){this.classList.toggle('on');pv()};$('#hdOn').onclick=function(){this.classList.toggle('on');pv()};
 $('#dur').oninput=e=>$('#dv').textContent=e.target.value;
+['#sTg','#f1','#f2'].forEach(k=>$(k).addEventListener('input',pv));
+['#sndOn','#barOn','#skOn'].forEach(k=>$(k).onclick=function(){this.classList.toggle('on');if(k==='#skOn')$('#skOpt').classList.toggle('hide',!this.classList.contains('on'));pv()});
+$('#fnt').innerHTML=Object.entries(FN).map(([k,v])=>`<button class="chip${k===fnt?' on':''}" data-v="${k}" style="font-family:'${v}',sans-serif">${v}</button>`).join('');
+seg('#fnt',c=>{fnt=c.dataset.v;pv()});
+$('#skst').innerHTML=['Outline','Solid','Teks','Bulat','Kotak'].map((n,i)=>`<button class="chip${i===0?' on':''}" data-v="${i+1}">${n}</button>`).join('');
+seg('#skst',c=>{skst=+c.dataset.v;pv()});
+[['#pTx','tx'],['#pFt','ft'],['#pSk','sk'],['#pBr','br']].forEach(([id,k])=>{const el=$(id);
+ el.innerHTML=COL.map(c=>`<button type="button" class="sx${PC[k]===c[0]?' on':''}" data-c="${c[0]}" title="${c[1]}" aria-label="${c[1]}" style="background:${c[0]}"></button>`).join('');
+ el.querySelectorAll('.sx').forEach(b=>b.onclick=()=>{el.querySelectorAll('.sx').forEach(x=>x.classList.remove('on'));b.classList.add('on');PC[k]=b.dataset.c;pv()})});
 $('#nm').oninput=e=>{$('#hdt').textContent=e.target.value||'App';$('#st').value=e.target.value;pv()};
 // permissions
 const C=[["Kamera & Audio", "cam", ["cam|Kamera|Buka kamera, scan QR|CAMERA", "mic|Mikrofon|Rekam suara / voice call|RECORD_AUDIO", "mic|Pengaturan audio|Ubah volume & mode audio|MODIFY_AUDIO_SETTINGS", "flash|Senter|Nyalakan flash kamera|FLASHLIGHT", "cam|Kamera di latar|Kamera tetap aktif (FGS)|FOREGROUND_SERVICE_CAMERA", "mic|Mikrofon di latar|Rekam tetap jalan (FGS)|FOREGROUND_SERVICE_MICROPHONE", "cam|Proyeksi layar|Rekam / cast layar (FGS)|FOREGROUND_SERVICE_MEDIA_PROJECTION", "cam|Putar media di latar|Musik/video di latar (FGS)|FOREGROUND_SERVICE_MEDIA_PLAYBACK"]], ["Lokasi", "pin", ["pin|Lokasi presisi|GPS akurat|ACCESS_FINE_LOCATION", "pin|Lokasi perkiraan|Lokasi kasar via jaringan|ACCESS_COARSE_LOCATION", "pin|Lokasi di latar|Akses lokasi saat app ditutup|ACCESS_BACKGROUND_LOCATION", "pin|Pelacakan lokasi|Lokasi berkelanjutan (FGS)|FOREGROUND_SERVICE_LOCATION", "pin|Lokasi foto|Baca lokasi di metadata foto|ACCESS_MEDIA_LOCATION"]], ["Penyimpanan & Media", "img", ["file|Baca penyimpanan|Upload file dari penyimpanan|READ_EXTERNAL_STORAGE", "save|Tulis penyimpanan|Download & simpan file|WRITE_EXTERNAL_STORAGE", "img|Galeri foto|Pilih foto (Android 13+)|READ_MEDIA_IMAGES", "img|Galeri video|Pilih video (Android 13+)|READ_MEDIA_VIDEO", "img|Musik & audio|Pilih audio (Android 13+)|READ_MEDIA_AUDIO", "img|Foto pilihan pengguna|Akses sebagian foto (Android 14+)|READ_MEDIA_VISUAL_USER_SELECTED", "file|Kelola semua file|Akses penuh penyimpanan|MANAGE_EXTERNAL_STORAGE"]], ["Jaringan & Koneksi", "wifi", ["wifi|Status jaringan|Deteksi online / offline|ACCESS_NETWORK_STATE", "wifi|Status Wi-Fi|Baca info Wi-Fi|ACCESS_WIFI_STATE", "wifi|Ubah Wi-Fi|Hidupkan / matikan Wi-Fi|CHANGE_WIFI_STATE", "wifi|Ubah jaringan|Ubah konektivitas|CHANGE_NETWORK_STATE", "wifi|Multicast Wi-Fi|Terima paket multicast|CHANGE_WIFI_MULTICAST_STATE", "wifi|Wi-Fi sekitar|Temukan perangkat dekat (Android 13+)|NEARBY_WIFI_DEVICES", "bt|Bluetooth terhubung|Konek ke perangkat Bluetooth|BLUETOOTH_CONNECT", "bt|Pindai Bluetooth|Cari perangkat Bluetooth|BLUETOOTH_SCAN", "bt|Iklankan Bluetooth|Jadi perangkat terdeteksi|BLUETOOTH_ADVERTISE", "bt|Bluetooth lama|Android 11 ke bawah|BLUETOOTH", "bt|Admin Bluetooth lama|Android 11 ke bawah|BLUETOOTH_ADMIN", "nfc|NFC|Baca / tulis tag NFC|NFC", "nfc|Ultra-wideband|Ukur jarak perangkat UWB|UWB_RANGING", "nfc|Infra merah|Kirim sinyal IR|TRANSMIT_IR"]], ["Telepon, Pesan & Akun", "call", ["call|Telepon|Tautan tel: langsung menelepon|CALL_PHONE", "call|Status telepon|Baca status & operator|READ_PHONE_STATE", "call|Nomor telepon|Baca nomor perangkat|READ_PHONE_NUMBERS", "call|Jawab telepon|Angkat panggilan otomatis|ANSWER_PHONE_CALLS", "call|Riwayat panggilan|Baca log panggilan|READ_CALL_LOG", "call|Tulis riwayat panggilan|Ubah log panggilan|WRITE_CALL_LOG", "msg|Kirim SMS|Kirim pesan teks|SEND_SMS", "msg|Baca SMS|Baca pesan masuk|READ_SMS", "msg|Terima SMS|Tangkap SMS masuk (OTP)|RECEIVE_SMS", "msg|Terima MMS|Tangkap MMS masuk|RECEIVE_MMS", "users|Baca kontak|Akses daftar kontak|READ_CONTACTS", "users|Tulis kontak|Tambah / ubah kontak|WRITE_CONTACTS", "users|Daftar akun|Baca akun di perangkat|GET_ACCOUNTS", "cal|Baca kalender|Lihat acara|READ_CALENDAR", "cal|Tulis kalender|Tambah / ubah acara|WRITE_CALENDAR"]], ["Notifikasi & Layar", "bell", ["bell|Notifikasi|Tampilkan notifikasi dari web|POST_NOTIFICATIONS", "bell|Notifikasi layar penuh|Alarm / panggilan layar penuh|USE_FULL_SCREEN_INTENT", "vib|Getar|navigator.vibrate()|VIBRATE", "eye|Wake lock|Layar tetap nyala|WAKE_LOCK", "eye|Matikan kunci layar|Nonaktifkan keyguard|DISABLE_KEYGUARD", "eye|Tampil di atas app lain|Overlay / bubble|SYSTEM_ALERT_WINDOW", "eye|Perluas status bar|Buka panel notifikasi|EXPAND_STATUS_BAR", "img|Ganti wallpaper|Atur wallpaper|SET_WALLPAPER", "file|Pasang pintasan|Shortcut layar utama|INSTALL_SHORTCUT", "file|Hapus pintasan|Copot shortcut|UNINSTALL_SHORTCUT"]], ["Proses & Sistem", "bat", ["bat|Layanan latar|Foreground service|FOREGROUND_SERVICE", "bat|Sinkron data|Sinkronisasi di latar (FGS)|FOREGROUND_SERVICE_DATA_SYNC", "bat|Perangkat tersambung|Perangkat terhubung (FGS)|FOREGROUND_SERVICE_CONNECTED_DEVICE", "bat|Mulai saat boot|Jalan otomatis setelah restart|RECEIVE_BOOT_COMPLETED", "bat|Alarm tepat waktu|Jadwal alarm presisi|SCHEDULE_EXACT_ALARM", "bat|Alarm tepat (otomatis)|Alarm tanpa izin pengguna|USE_EXACT_ALARM", "bat|Abaikan optimasi baterai|Tetap jalan di latar|REQUEST_IGNORE_BATTERY_OPTIMIZATIONS", "bat|Instal paket|Pasang APK lain|REQUEST_INSTALL_PACKAGES", "bat|Daftar semua app|Lihat app terpasang|QUERY_ALL_PACKAGES", "bat|Hentikan proses latar|Matikan proses lain|KILL_BACKGROUND_PROCESSES", "bat|Ubah pengaturan sistem|Tulis settings|WRITE_SETTINGS", "bat|Statistik pemakaian|Pemakaian app lain|PACKAGE_USAGE_STATS", "bat|Sinkron akun|Baca pengaturan sinkron|READ_SYNC_SETTINGS"]], ["Sensor & Keamanan", "shield", ["zap|Sensor cepat|Motion / orientasi 200Hz+|HIGH_SAMPLING_RATE_SENSORS", "zap|Sensor tubuh|Detak jantung dan sejenisnya|BODY_SENSORS", "zap|Sensor tubuh di latar|Sensor tubuh saat app ditutup|BODY_SENSORS_BACKGROUND", "zap|Pengenalan aktivitas|Hitung langkah / aktivitas|ACTIVITY_RECOGNITION", "shield|Biometrik|Sidik jari / wajah|USE_BIOMETRIC", "shield|Sidik jari lama|Android 8 ke bawah|USE_FINGERPRINT", "zap|Kesehatan di latar|Layanan kesehatan (FGS)|FOREGROUND_SERVICE_HEALTH", "zap|Penggunaan khusus|Layanan khusus (FGS)|FOREGROUND_SERVICE_SPECIAL_USE"]]];
@@ -339,7 +375,7 @@ $('#go').onclick=async function(){
    versionCode:+$('#vc').value,versionName:$('#vn').value.trim(),permissions:perms(),
    header:$('#hdOn').classList.contains('on'),js:$('#jsOn').classList.contains('on'),zoom:$('#zmOn').classList.contains('on'),
    orientation:$('#ori .on').dataset.v,
-   splash:{on:$('#spOn').classList.contains('on'),text:$('#st').value,type:cur,ms:+$('#dur').value,bg:$('#bg').value,fg:$('#fg').value,fit,showText:$('#mTx').classList.contains('on')},files};
+   splash:{on:$('#spOn').classList.contains('on'),text:$('#st').value,type:cur,ms:+$('#dur').value,bg:$('#bg').value,fg:$('#fg').value,fit,tagline:$('#sTg').value.trim(),footer1:$('#f1').value.trim(),footer2:$('#f2').value.trim(),font:fnt,sound:on_('#sndOn'),bar:on_('#barOn'),skip:on_('#skOn'),skipStyle:skst,cText:PC.tx,cFooter:PC.ft,cSkip:PC.sk,cBar:PC.br},files};
   L('Mengirim permintaan build…');
   const r=await fetch('/api/build',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({job,config:cfg})});
   const j=await r.json().catch(()=>({}));
@@ -389,7 +425,6 @@ dz($('#dz-m'),(f,u)=>{FILES.media=snap(f);media=f?{url:u,type:f.type.startsWith(
 dz($('#dz-i'),(f,u)=>{FILES.icon=snap(f);iconURL=u;pv()});
 dz($('#dz-h'),f=>{FILES.html=snap(f)});
 seg('#mfit',c=>{fit=c.dataset.v;pv()});
-$('#mTx').onclick=function(){this.classList.toggle('on');pv()};
 // donation modal
 const md=$('#md');const close=()=>{md.classList.remove('show');store.set('nb-seen',String(Date.now()))};
 setTimeout(()=>md.classList.add('show'),900);
